@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AWB Hub</title>
+<meta name="theme-color" content="#FFFFFF">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{
+  --bg:#F4F6F1; --surface:#FFFFFF; --ink:#3A2A12; --muted:#7A6A55;
+  --line:#E3DCCB; --berry:#C9151E; --leaf:#4E8B2F; --gold:#A8721E;
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#1B1610; --surface:#272016; --ink:#F3EAD8; --muted:#B5A78E; --line:#41372A; }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  padding:env(safe-area-inset-top) 18px calc(env(safe-area-inset-bottom) + 28px);
+  min-height:100vh;
+}
+.wrap{max-width:720px;margin:0 auto}
+header{padding:28px 0 18px}
+.logo{display:block;height:84px;width:auto;margin:0 0 10px}
+@media (prefers-color-scheme: dark){.logo{background:#fff;border-radius:12px;padding:6px 12px}}
+header p{margin:0;color:var(--muted);font-size:.98rem}
+.search{
+  width:100%; margin:14px 0 6px; padding:13px 16px; font:inherit; font-size:1rem;
+  color:var(--ink); background:var(--surface); border:1.5px solid var(--line); border-radius:12px;
+}
+.search:focus{outline:3px solid var(--leaf);outline-offset:1px;border-color:var(--leaf)}
+h2{font-size:.95rem;font-weight:600;color:var(--muted);margin:26px 0 10px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.app{
+  display:flex;flex-direction:column;gap:10px;min-height:128px;padding:16px;
+  background:var(--surface);border:1.5px solid var(--line);border-radius:14px;
+  color:inherit;text-decoration:none;
+}
+.app:hover{border-color:var(--leaf)}
+.app:active{transform:scale(.98)}
+.app:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
+.badge{
+  width:42px;height:42px;border-radius:10px;display:grid;place-items:center;
+  font-size:1.35rem;background:var(--c,var(--ink));
+}
+.app b{font-size:1.02rem;line-height:1.2}
+.app span{font-size:.84rem;color:var(--muted);line-height:1.35}
+.empty{color:var(--muted);padding:24px 0;display:none}
+footer{margin-top:34px;color:var(--muted);font-size:.8rem}
+@media (prefers-reduced-motion: reduce){.app:active{transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="logo-awb.png" alt="Agri Wangi Berry">
+    <p>Pilih aplikasi yang mau dibuka.</p>
+    <input class="search" id="q" type="search" placeholder="Cari aplikasi" autocomplete="off" aria-label="Cari aplikasi">
+  </header>
+
+  <div id="groups"></div>
+  <p class="empty" id="empty">Tidak ada aplikasi yang cocok.</p>
+
+  
+</div>
+
+<script>
+/* ===== EDIT DI SINI =====
+   url  : alamat aplikasi (ganti sesuai alamat deploy aslinya)
+   group: nama kelompok di halaman
+   icon : emoji
+   color: warna kotak ikon */
+const BASE = "https://bshafff.github.io/";
+const APPS = [
+  { id:"prosesing", name:"Prosesing", desc:"Data packing dan reject",      url:BASE+"prosesing/",  group:"Aplikasi", icon:"📦", color:"#F3C9CC" },
+  { id:"ipm",       name:"IPM",       desc:"Monitoring hama dan penyakit", url:BASE+"ipm-awb/",    group:"Aplikasi", icon:"🐛", color:"#D3E6C6" },
+  { id:"lebah",     name:"Lebah",     desc:"Form koloni dan polinasi",     url:BASE+"bee-form/",   group:"Aplikasi", icon:"🐝", color:"#F5E3A8" },
+  { id:"gh1",       name:"GH 1",      desc:"Data Greenhouse 1",            url:BASE+"gh1/",        group:"Aplikasi", icon:"🏡", color:"#CFE3D6" },
+  { id:"gh2",       name:"GH 2",      desc:"Data Greenhouse 2",            url:BASE+"gh2/",        group:"Aplikasi", icon:"🏡", color:"#CFE3D6" },
+  { id:"fertigasi", name:"Fertigasi", desc:"Pemupukan dan irigasi",        url:BASE+"fertigasi/",  group:"Aplikasi", icon:"💧", color:"#C6DDEE" },
+  { id:"admin",     name:"Admin",     desc:"Admin farm, aset, dan slip",   url:BASE+"adminawb/",   group:"Aplikasi", icon:"🗂️", color:"#E6D8BD" }
+];
+/* ======================== */
+
+const $ = (s) => document.querySelector(s);
+
+function tile(a){
+  const el = document.createElement("a");
+  el.className = "app";
+  el.href = a.url;
+  el.style.setProperty("--c", a.color);
+  const badge = document.createElement("div"); badge.className = "badge"; badge.textContent = a.icon;
+  const name = document.createElement("b"); name.textContent = a.name;
+  const desc = document.createElement("span"); desc.textContent = a.desc;
+  el.append(badge, name, desc);
+  return el;
+}
+
+function render(){
+  const q = $("#q").value.trim().toLowerCase();
+  const list = APPS.filter((a) => !q || (a.name + " " + a.desc + " " + a.group).toLowerCase().includes(q));
+
+  const box = $("#groups");
+  box.replaceChildren();
+  const groups = [...new Set(list.map((a) => a.group))];
+  groups.forEach((g) => {
+    const h = document.createElement("h2"); h.textContent = g;
+    const grid = document.createElement("div"); grid.className = "grid";
+    list.filter((a) => a.group === g).forEach((a) => grid.append(tile(a)));
+    box.append(h, grid);
+  });
+  $("#empty").style.display = list.length ? "none" : "block";
+}
+
+$("#q").addEventListener("input", render);
+render();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
+</script>
+</body>
+</html>
